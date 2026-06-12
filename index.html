@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Final - Finanzas Corporativas</title>
+    <meta name="description" content="Análisis financiero y valoración DCF de ITALCOL SA — Proyecto Final Finanzas Corporativas">
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="dark">
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header>
+    <div class="brand">
+        <div class="logo-icon">PF</div>
+        <div class="brand-details">
+            <h1>Proyecto Final — Finanzas Corporativas</h1>
+            <p>Caso: ITALCOL SA &nbsp;·&nbsp; Isaac Cabrera &amp; Javier Sierra</p>
+        </div>
+    </div>
+    <div class="header-controls">
+        <span class="badge">NIT 860026895</span>
+        <span class="badge">CIIU 1090</span>
+        <span class="badge badge-green">ACTIVA</span>
+        <button class="theme-toggle" id="theme-toggle-btn" title="Tema Claro/Oscuro">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="sun-icon" style="display:none">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+            </svg>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="moon-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+        </button>
+    </div>
+</header>
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div class="dashboard-container">
+
+    <!-- Panel Lateral: Simulador -->
+    <aside class="sidebar">
+        <div class="sidebar-title">Simulador DCF</div>
+
+        <div class="control-group">
+            <label>Tasa Libre de Riesgo (Rf) <span id="rf-val">4.5%</span></label>
+            <input type="range" id="rf-slider" class="slider" min="3.0" max="8.0" step="0.1" value="4.5">
+        </div>
+        <div class="control-group">
+            <label>Prima de Mercado (MRP) <span id="mrp-val">6.0%</span></label>
+            <input type="range" id="mrp-slider" class="slider" min="4.0" max="9.0" step="0.1" value="6.0">
+        </div>
+        <div class="control-group">
+            <label>Riesgo País (CRP) <span id="crp-val">5.0%</span></label>
+            <input type="range" id="crp-slider" class="slider" min="2.0" max="8.0" step="0.1" value="5.0">
+        </div>
+        <div class="control-group">
+            <label>Beta Industria (β) <span id="beta-val">2.00x</span></label>
+            <input type="range" id="beta-slider" class="slider" min="0.5" max="3.5" step="0.05" value="2.0">
+        </div>
+        <div class="control-group">
+            <label>Crecimiento Terminal (g) <span id="g-val">3.0%</span></label>
+            <input type="range" id="g-slider" class="slider" min="1.0" max="6.0" step="0.1" value="3.0">
+        </div>
+        <div class="control-group">
+            <label>Crecimiento Ingresos <span id="growth-val">6.0%</span></label>
+            <input type="range" id="growth-slider" class="slider" min="2.0" max="12.0" step="0.5" value="6.0">
+        </div>
+        <div class="control-group">
+            <label>Tasa de Impuestos <span id="tax-val">35%</span></label>
+            <input type="range" id="tax-slider" class="slider" min="30" max="38" step="1" value="35">
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-subtitle">Resultados CAPM / WACC</div>
+            <div class="mini-kpi-row">
+                <div class="mini-kpi"><span>Ke</span><strong id="ke-display">21.50%</strong></div>
+                <div class="mini-kpi"><span>WACC</span><strong id="wacc-display">15.29%</strong></div>
+            </div>
+        </div>
+
+        <div class="info-note">
+            <strong>Simulador en Tiempo Real:</strong> Modifica los parámetros de valoración. El Equity Value, las proyecciones y la matriz de sensibilidad se recalculan instantáneamente.
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main>
+
+        <!-- Tabs -->
+        <nav class="tabs-navigation">
+            <button class="tab-btn active" data-tab="resumen">Resumen</button>
+            <button class="tab-btn" data-tab="empresa">Empresa</button>
+            <button class="tab-btn" data-tab="historico">Indicadores</button>
+            <button class="tab-btn" data-tab="benchmark">Benchmark</button>
+            <button class="tab-btn" data-tab="cambiario">TRM</button>
+            <button class="tab-btn" data-tab="proyecciones">Proyecciones &amp; FCL</button>
+            <button class="tab-btn" data-tab="valoracion">Valoración</button>
+            <button class="tab-btn" data-tab="sensibilidad">Sensibilidad</button>
+            <button class="tab-btn" data-tab="conclusion">Conclusión</button>
+        </nav>
+
+        <!-- ════ 1. RESUMEN ════ -->
+        <section class="tab-pane active" id="resumen">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Valor del Patrimonio (Escenario Base)</div>
+                    <div class="kpi-value" id="kpi-equity">636.05 MM COP</div>
+                    <div class="kpi-change positive">▲ DCF con WACC 15.29% · g 3.0%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Valor de la Empresa (EV)</div>
+                    <div class="kpi-value" id="kpi-ev">1,017.72 MM COP</div>
+                    <div class="kpi-change positive">▲ PV Flujos + PV Valor Terminal</div>
+                </div>
+                <div class="kpi-card success">
+                    <div class="kpi-title">WACC Calculado</div>
+                    <div class="kpi-value" id="kpi-wacc">15.29%</div>
+                    <div class="kpi-change">Ke=21.50% · Kd(1-T)=7.48%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Ingresos Operacionales 2024</div>
+                    <div class="kpi-value">3,161.20 MM COP</div>
+                    <div class="kpi-change negative">▼ -12.94% vs 2023 (precios USD)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Flujo de Caja Operacional 2024</div>
+                    <div class="kpi-value">227.01 MM COP</div>
+                    <div class="kpi-change positive">▲ +59.3% · Mejor histórico</div>
+                </div>
+                <div class="kpi-card success">
+                    <div class="kpi-title">ROE 2024</div>
+                    <div class="kpi-value">22.69%</div>
+                    <div class="kpi-change positive">▲ Superior mediana sector (18.9%)</div>
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top:2rem">
+                <div class="card">
+                    <div class="card-title">Resumen Ejecutivo</div>
+                    <div class="narrative">
+                        <p><strong>ITALCOL SA</strong> es el mayor productor de alimentos concentrados para animales en Colombia (CIIU 1090), con ingresos de COP 3,161 MM en 2024. A pesar de una contracción de -12.94% en ingresos, producto de la apreciación del peso, la firma expandió su margen bruto de 8.71% a 10.16% y registró el mejor flujo de caja operacional de su historia: COP 227 MM.</p>
+                        <p>El endeudamiento se redujo del 63.7% (2022) al 44.3% (2024). Bajo los supuestos reglamentarios (WACC=15.29%, g=3%), el <strong>Valor del Patrimonio estimado es de COP 636.05 MM</strong> en el escenario base.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Escenarios de Valoración</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Escenario</th>
+                                    <th class="text-center">Crecimiento</th>
+                                    <th class="text-right">Equity Value (MM)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>🔴 Pesimista</td>
+                                    <td class="text-center">2.0% · EBIT 4.8%</td>
+                                    <td class="text-right" id="s-pes">237.36</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>🔵 Base</td>
+                                    <td class="text-center">6.0% · EBIT 6.0%</td>
+                                    <td class="text-right" id="s-base">636.05</td>
+                                </tr>
+                                <tr>
+                                    <td>🟢 Optimista</td>
+                                    <td class="text-center">9.0% · EBIT 7.5%</td>
+                                    <td class="text-right" id="s-opt">1,249.30</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════ 2. EMPRESA ════ -->
+        <section class="tab-pane" id="empresa">
+            <div class="card">
+                <div class="card-title">Caracterización de la Empresa — ITALCOL SA</div>
+                <div class="table-wrapper">
+                    <table>
+                        <tbody>
+                            <tr><td><strong>Razón Social</strong></td><td>ITALCOL SA</td></tr>
+                            <tr><td><strong>NIT</strong></td><td>860026895-5</td></tr>
+                            <tr><td><strong>Tipo Societario</strong></td><td>Sociedad Anónima</td></tr>
+                            <tr><td><strong>Estado</strong></td><td><span style="color:var(--success-color);font-weight:700">● ACTIVA</span></td></tr>
+                            <tr><td><strong>Constitución</strong></td><td>18 de febrero de 1970 (más de 55 años)</td></tr>
+                            <tr><td><strong>CIIU</strong></td><td>1090 — Elaboración de alimentos preparados para animales</td></tr>
+                            <tr><td><strong>Sección Industrial</strong></td><td>C — Industrias Manufactureras</td></tr>
+                            <tr><td><strong>Marco Contable</strong></td><td>NIIF Plenas (IFRS Full)</td></tr>
+                            <tr><td><strong>Ubicación</strong></td><td>Calle 94A 11A 73 Piso 4, Bogotá D.C., Colombia</td></tr>
+                            <tr><td><strong>Objeto Social</strong></td><td>Elaboración de alimentos concentrados para animales</td></tr>
+                            <tr><td><strong>Revisor Fiscal</strong></td><td>VCB Auditores y Consultores SAS — Dictamen Limpio ✓</td></tr>
+                            <tr><td><strong>Periodo Analizado</strong></td><td>2022 – 2024 (Histórico) · 2025 – 2029 (Proyectado)</td></tr>
+                            <tr><td><strong>Fuente de Datos</strong></td><td>Analítica Empresarial · SIIS Supersociedades</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card" style="margin-top:2rem">
+                <div class="card-title">Contexto Sectorial (CIIU 1090)</div>
+                <div class="narrative">
+                    <p>El sector de <strong>Elaboración de alimentos preparados para animales</strong> en Colombia está conformado por aproximadamente 55 empresas registradas ante Supersociedades. ITALCOL SA ocupa el puesto <strong>#1 en ingresos</strong> con COP 3,161 MM, muy por encima de la mediana sectorial (COP 55 MM).</p>
+                    <p>Las principales materias primas son <strong>maíz, soya y sorgo</strong>, cuya mayoría se importan de EE.UU. y Suramérica, haciendo al sector altamente sensible a variaciones en la TRM y al clima (fenómeno de El Niño/La Niña).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════ 3. INDICADORES HISTÓRICOS ════ -->
+        <section class="tab-pane" id="historico">
+            <div class="card">
+                <div class="card-title">Estados Financieros Reconstruidos (2022 – 2024) — MM COP</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Concepto</th><th class="text-right">2022</th><th class="text-right">2023</th><th class="text-right">2024</th><th class="text-right">Var% 23-24</th></tr></thead>
+                        <tbody id="hist-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top:2rem">
+                <div class="card">
+                    <div class="card-title">Indicadores de Liquidez y Endeudamiento</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Indicador</th><th class="text-center">2022</th><th class="text-center">2023</th><th class="text-center">2024</th></tr></thead>
+                            <tbody id="ratios-liquidez-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Indicadores de Rentabilidad y Eficiencia</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Indicador</th><th class="text-center">2022</th><th class="text-center">2023</th><th class="text-center">2024</th></tr></thead>
+                            <tbody id="ratios-renta-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:2rem">
+                <div class="card-title">Generación de Caja y Eficiencia Operativa</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Indicador</th><th class="text-center">2022</th><th class="text-center">2023</th><th class="text-center">2024</th><th>Interpretación</th></tr></thead>
+                        <tbody id="ratios-caja-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════ 4. BENCHMARK ════ -->
+        <section class="tab-pane" id="benchmark">
+            <div class="content-grid">
+                <div class="card">
+                    <div class="card-title">Comparativo Sectorial — Márgenes (CIIU 1090 · 2024)</div>
+                    <div class="chart-container"><canvas id="benchmarkChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Percentiles del Sector vs. ITALCOL SA</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Métrica</th><th>ITALCOL</th><th>P25</th><th>P50</th><th>P75</th></tr></thead>
+                            <tbody>
+                                <tr class="highlight-row"><td><strong>Margen Operacional</strong></td><td style="color:var(--accent-color)">6.0%</td><td>2.9%</td><td>7.6%</td><td>12.5%</td></tr>
+                                <tr><td><strong>Margen Neto</strong></td><td style="color:var(--accent-color)">4.0%</td><td>0.9%</td><td>3.7%</td><td>7.0%</td></tr>
+                                <tr class="highlight-row"><td><strong>ROA</strong></td><td style="color:var(--success-color)">12.6%</td><td>2.0%</td><td>7.3%</td><td>13.1%</td></tr>
+                                <tr><td><strong>ROE</strong></td><td style="color:var(--success-color)">22.7%</td><td>7.7%</td><td>18.9%</td><td>—</td></tr>
+                                <tr><td><strong>Ingresos (MM)</strong></td><td style="color:var(--accent-color)">3,161</td><td>19</td><td>55</td><td>187</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="narrative" style="margin-top:1.5rem">
+                        <p><strong>Posición Competitiva:</strong> ITALCOL lidera en volumen con ventaja >57x sobre la mediana sectorial. Su ROA (12.6%) supera el P75 del sector, demostrando una eficiencia de activos extraordinaria. El margen neto (4.0%) supera levemente la mediana (3.7%).</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card content-grid full-width" style="margin-top:2rem">
+                <div class="card-title">Principales Competidores Directos — CIIU 1090 (2024)</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>#</th><th>Empresa</th><th>Ciudad</th><th class="text-right">Ingresos (MM)</th><th class="text-right">Activos (MM)</th><th class="text-center">Margen Op.</th><th class="text-center">Margen Neto</th></tr></thead>
+                        <tbody>
+                            <tr class="highlight-row"><td>1</td><td><strong>ITALCOL SA ★</strong></td><td>Bogotá D.C.</td><td class="text-right">3,161.20</td><td class="text-right">998.31</td><td class="text-center" style="color:var(--accent-color)">6.0%</td><td class="text-center" style="color:var(--accent-color)">4.0%</td></tr>
+                            <tr><td>2</td><td>ITALCOL DE OCCIDENTE</td><td>Palmira-Valle</td><td class="text-right">2,271.39</td><td class="text-right">767.54</td><td class="text-center">8.3%</td><td class="text-center">5.4%</td></tr>
+                            <tr><td>3</td><td>Solla S.A</td><td>Itagüí-Antioquia</td><td class="text-right">2,165.69</td><td class="text-right">842.47</td><td class="text-center">7.2%</td><td class="text-center">5.3%</td></tr>
+                            <tr><td>4</td><td>MIZOOCO S.A.S.</td><td>Envigado-Antioquia</td><td class="text-right">836.60</td><td class="text-right">300.10</td><td class="text-center">25.1%</td><td class="text-center">16.2%</td></tr>
+                            <tr><td>5</td><td>Concentrados Espartaco</td><td>Girón-Santander</td><td class="text-right">169.48</td><td class="text-right">59.50</td><td class="text-center">8.2%</td><td class="text-center">4.9%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════ 5. TRM ════ -->
+        <section class="tab-pane" id="cambiario">
+            <div class="card">
+                <div class="card-title">Evolución de la TRM y Correlación con Variables Financieras</div>
+                <div class="chart-container" style="height:380px"><canvas id="trmChart"></canvas></div>
+            </div>
+            <div class="content-grid" style="margin-top:2rem">
+                <div class="card">
+                    <div class="card-title">Correlación TRM × Variables Financieras</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Variable</th><th class="text-center">Correlación</th><th>Interpretación</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>TRM × Ingresos Operacionales</strong></td><td class="text-center" style="color:var(--success-color);font-weight:700">+1.000</td><td>Correlación perfecta positiva</td></tr>
+                                <tr><td><strong>TRM × Costo de Ventas</strong></td><td class="text-center" style="color:var(--success-color);font-weight:700">+1.000</td><td>Materias primas indexadas al USD</td></tr>
+                                <tr><td><strong>TRM × FCO</strong></td><td class="text-center" style="color:var(--accent-color);font-weight:700">+1.000</td><td>Efectivo operativo ligado al ciclo cambiario</td></tr>
+                                <tr class="highlight-row"><td><strong>Impacto TRM 2023→2024</strong></td><td class="text-center" style="color:var(--warning-color);font-weight:700">−6.2%</td><td>Peso se revaluó; ingresos cayeron en COP</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Análisis del Impacto Cambiario</div>
+                    <div class="narrative">
+                        <p><strong>Efecto TRM en 2024:</strong> La TRM promedio cayó de 4,325 COP (2023) a 4,057 COP (2024), una apreciación del peso del <strong>-6.2%</strong>. Este fenómeno produjo:</p>
+                        <ul>
+                            <li><strong>Ingresos:</strong> Caída del -12.94% pese a volúmenes similares (precios de concentrado ligados al USD).</li>
+                            <li><strong>Costos:</strong> Reducción de -14.31% en costo de ventas por abaratamiento de granos importados.</li>
+                            <li><strong>Márgenes:</strong> Expansión del margen bruto a 10.16% y operacional a 5.99%.</li>
+                            <li><strong>FCO:</strong> Mejor generación de caja histórica: COP 227 MM (+59.3%).</li>
+                        </ul>
+                        <p><strong>Recomendación:</strong> Implementar coberturas cambiarias (forwards USD/COP) para el 60-70% de importaciones proyectadas, fijando costos en escenarios de devaluación severa.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════ 6. PROYECCIONES & FCL ════ -->
+        <section class="tab-pane" id="proyecciones">
+            <div class="card">
+                <div class="card-title">Estados Financieros Proyectados — Escenario Base (2025-2029)</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Concepto (MM COP)</th><th class="text-right">2025</th><th class="text-right">2026</th><th class="text-right">2027</th><th class="text-right">2028</th><th class="text-right">2029</th></tr></thead>
+                        <tbody id="proj-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="content-grid" style="margin-top:2rem">
+                <div class="card">
+                    <div class="card-title">Flujo de Caja Libre — Tres Escenarios</div>
+                    <div class="chart-container"><canvas id="fcfChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Supuestos del Modelo de Proyección</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <tbody>
+                                <tr><td><strong>Crecimiento Ingresos Base</strong></td><td class="text-right">6.0% a.a.</td></tr>
+                                <tr><td><strong>Margen EBIT Base</strong></td><td class="text-right">6.0%</td></tr>
+                                <tr><td><strong>D&amp;A (% Ingresos)</strong></td><td class="text-right">1.0%</td></tr>
+                                <tr><td><strong>CAPEX (% Ingresos)</strong></td><td class="text-right">1.2%</td></tr>
+                                <tr><td><strong>KTNO (% Ingresos)</strong></td><td class="text-right">5.0%</td></tr>
+                                <tr><td><strong>Tasa de Impuesto</strong></td><td class="text-right">35.0%</td></tr>
+                                <tr class="highlight-row"><td><strong>WACC (Tasa de Descuento)</strong></td><td class="text-right" id="wacc-proj-display">15.29%</td></tr>
+                                <tr><td><strong>Crecimiento Terminal (g)</strong></td><td class="text-right">3.0%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════ 7. VALORACIÓN ════ -->
+        <section class="tab-pane" id="valoracion">
+            <div class="content-grid">
+                <div class="card">
+                    <div class="card-title">Parámetros de Valoración (Supuestos Reglamentarios)</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Variable</th><th class="text-right">Valor Base</th></tr></thead>
+                            <tbody>
+                                <tr><td>Horizonte de proyección</td><td class="text-right">5 años (2025-2029)</td></tr>
+                                <tr><td>Tasa libre de riesgo (Rf)</td><td class="text-right" id="param-rf">4.5%</td></tr>
+                                <tr><td>Prima de mercado (MRP)</td><td class="text-right" id="param-mrp">6.0%</td></tr>
+                                <tr><td>Riesgo país (CRP)</td><td class="text-right" id="param-crp">5.0%</td></tr>
+                                <tr><td>Beta de la industria (β levered)</td><td class="text-right" id="param-beta">2.0x</td></tr>
+                                <tr><td>Tasa de impuesto</td><td class="text-right">35%</td></tr>
+                                <tr><td>Costo deuda Kd (bruto COP)</td><td class="text-right">11.50%</td></tr>
+                                <tr><td>Crecimiento terminal (g)</td><td class="text-right" id="param-g">3.0%</td></tr>
+                                <tr class="highlight-row"><td><strong>Ke (CAPM)</strong></td><td class="text-right" id="param-ke">21.50%</td></tr>
+                                <tr class="highlight-row"><td><strong>WACC</strong></td><td class="text-right" id="param-wacc">15.29%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Resultado de la Valoración DCF</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <tbody>
+                                <tr><td>Σ PV Flujos de Caja Libre (2025-2029)</td><td class="text-right" id="val-sum-pv">—</td></tr>
+                                <tr><td>Valor Terminal (Gordon-Shapiro)</td><td class="text-right" id="val-tv">—</td></tr>
+                                <tr><td>PV del Valor Terminal</td><td class="text-right" id="val-pv-tv">—</td></tr>
+                                <tr class="highlight-row"><td><strong>Valor de la Empresa (EV)</strong></td><td class="text-right" id="val-ev" style="font-size:1.05rem">—</td></tr>
+                                <tr><td>(−) Deuda Neta de Caja (Total Pasivos − Caja est.)</td><td class="text-right" id="val-debt">381.67 MM COP</td></tr>
+                                <tr style="background:rgba(16,185,129,.15)"><td><strong>Valor del Patrimonio (Equity Value)</strong></td><td class="text-right" id="val-equity" style="color:var(--success-color);font-size:1.1rem;font-weight:700">—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="narrative" style="margin-top:1.5rem">
+                        <p><strong>Fórmula CAPM:</strong> Ke = Rf + β × MRP + CRP</p>
+                        <p><strong>Fórmula WACC:</strong> WACC = Ke × We + Kd×(1−T) × Wd</p>
+                        <p><strong>Valor Terminal:</strong> TV = FCFF₅ × (1+g) / (WACC − g)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════ 8. SENSIBILIDAD ════ -->
+        <section class="tab-pane" id="sensibilidad">
+            <div class="content-grid">
+                <div class="card full-width">
+                    <div class="card-title">Escenarios de Valoración — Optimista / Base / Pesimista</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Variable</th>
+                                    <th class="text-center" style="color:#EF4444">🔴 Pesimista</th>
+                                    <th class="text-center" style="color:#3B82F6">🔵 Base</th>
+                                    <th class="text-center" style="color:#10B981">🟢 Optimista</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Crecimiento Ingresos</td><td class="text-center">2.0%</td><td class="text-center">6.0%</td><td class="text-center">9.0%</td></tr>
+                                <tr><td>Margen EBIT</td><td class="text-center">4.8%</td><td class="text-center">6.0%</td><td class="text-center">7.5%</td></tr>
+                                <tr><td>Ajuste al WACC</td><td class="text-center">+200 bps</td><td class="text-center">0 bps</td><td class="text-center">−150 bps</td></tr>
+                                <tr><td>WACC Resultante</td><td class="text-center" id="pes-wacc">17.29%</td><td class="text-center" id="base-wacc">15.29%</td><td class="text-center" id="opt-wacc">13.79%</td></tr>
+                                <tr class="highlight-row"><td><strong>Equity Value (MM COP)</strong></td><td class="text-center" id="pes-eq" style="color:#EF4444;font-weight:700">237.36</td><td class="text-center" id="base-eq" style="color:#3B82F6;font-weight:700">636.05</td><td class="text-center" id="opt-eq" style="color:#10B981;font-weight:700">1,249.30</td></tr>
+                                <tr><td>Enterprise Value (MM COP)</td><td class="text-center" id="pes-ev">619.03</td><td class="text-center" id="base-ev">1,017.72</td><td class="text-center" id="opt-ev">1,630.97</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:2rem">
+                <div class="card-title">Matriz de Sensibilidad Dinámica — Equity Value (WACC × g)</div>
+                <div class="narrative" style="margin-bottom:1.5rem">La celda marcada con ★ representa el escenario base. Los valores en verde representan valoraciones más altas; en rojo, más bajas.</div>
+                <div class="table-wrapper">
+                    <table class="sensitivity-table">
+                        <thead><tr id="sensitivity-header"></tr></thead>
+                        <tbody id="sensitivity-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════ 9. CONCLUSIÓN EJECUTIVA ════ -->
+        <section class="tab-pane" id="conclusion">
+            <div class="card">
+                <div class="card-title" style="font-size:1.4rem">Conclusión Ejecutiva y Recomendación</div>
+                <div class="narrative">
+                    <div class="conclusion-grid">
+                        <div class="conclusion-block strength">
+                            <h3>✅ Fortalezas</h3>
+                            <ul>
+                                <li><strong>Líder sectorial indiscutible:</strong> ITALCOL SA supera al competidor más cercano en más de 3x en ingresos, con una escala única en Colombia.</li>
+                                <li><strong>Expansión de márgenes:</strong> Pese a la caída en ventas nominales de -12.94%, el margen bruto creció del 8.71% al 10.16% gracias a la gestión cambiaria.</li>
+                                <li><strong>Fortaleza de caja:</strong> FCO de COP 227 MM en 2024 (+59.3% yoy) es el mejor resultado histórico, demostrando una conversión de utilidades a efectivo de alta calidad (FCO/EBIT &gt; 1.0x).</li>
+                                <li><strong>Reducción de riesgo:</strong> Endeudamiento cayó del 63.7% (2022) al 44.3% (2024), mejorando la estructura financiera.</li>
+                                <li><strong>Dictamen limpio:</strong> Auditoría sin salvedades por VCB Auditores, reforzando la confiabilidad de los estados financieros.</li>
+                            </ul>
+                        </div>
+                        <div class="conclusion-block risk">
+                            <h3>⚠️ Riesgos a Monitorear</h3>
+                            <ul>
+                                <li><strong>Exposición cambiaria:</strong> La alta correlación TRM–Ingresos (1.0) genera volatilidad en periodos de devaluación. Sin coberturas, un shock cambiario comprime márgenes.</li>
+                                <li><strong>Concentración de mercado:</strong> La empresa compite con su propia filial ITALCOL DE OCCIDENTE, lo que requiere una estrategia de posicionamiento diferenciada.</li>
+                                <li><strong>Costo de capital elevado:</strong> El WACC del 15.29% bajo los supuestos reglamentarios (Beta=2.0x) eleva el umbral de rentabilidad requerida para nuevas inversiones.</li>
+                                <li><strong>Ciclo de materias primas:</strong> Precios globales de maíz y soya son volátiles; un repunte podría revertir la expansión de márgenes lograda en 2024.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="conclusion-verdict">
+                        <h3>📊 Veredicto de Valoración</h3>
+                        <div class="verdict-grid">
+                            <div class="verdict-card pessimist">
+                                <div class="verdict-label">Escenario Pesimista</div>
+                                <div class="verdict-value" id="conc-pes">COP 237.36 MM</div>
+                                <div class="verdict-sub">WACC +200bps · Crecimiento 2%</div>
+                            </div>
+                            <div class="verdict-card base">
+                                <div class="verdict-label">⭐ Escenario Base</div>
+                                <div class="verdict-value" id="conc-base">COP 636.05 MM</div>
+                                <div class="verdict-sub">WACC 15.29% · Crecimiento 6%</div>
+                            </div>
+                            <div class="verdict-card optimist">
+                                <div class="verdict-label">Escenario Optimista</div>
+                                <div class="verdict-value" id="conc-opt">COP 1,249.30 MM</div>
+                                <div class="verdict-sub">WACC −150bps · Crecimiento 9%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="conclusion-recommendation">
+                        <h3>🏆 Recomendación Final</h3>
+                        <p><strong>RECOMENDACIÓN: MANTENER / ACUMULAR.</strong> ITALCOL SA es una empresa fundamentalmente sana con ventajas competitivas estructurales (escala, distribución nacional, integración en la cadena agroalimentaria). El valor del patrimonio en el escenario base se estima en <strong id="conc-base-inline">COP 636.05 MM</strong>, con un amplio rango al alza si el WACC efectivo resulta inferior al paramétrico utilizado (15.29%).</p>
+                        <p>Se sugiere a la administración: <strong>(1)</strong> implementar un programa de coberturas cambiarias sobre el 60-70% de importaciones proyectadas; <strong>(2)</strong> continuar la reducción del endeudamiento hacia el 35-40%; <strong>(3)</strong> reinvertir la fuerte generación de caja en capacidad productiva para sostener el crecimiento proyectado del 6% anual.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
